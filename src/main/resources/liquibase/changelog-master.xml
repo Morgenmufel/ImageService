@@ -6,8 +6,9 @@
         https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.15.xsd">
 
     <include file="liquibase/v-1/schema/create-gallery-schema.sql"/>
+    <include file="liquibase/v-1/tables/create-social-user-table.sql"/>
     <include file="liquibase/v-1/tables/create-images-table.sql"/>
     <include file="liquibase/v-1/tables/create-comments-table.sql"/>
-    <include file="liquibase/v-1/tables/create-likes-table.sql"/>
-
+    <include file="liquibase/v-1/tables/create-image-likes-table.sql"/>
+    <include file="liquibase/v-1/tables/create-comment-likes-table.sql"/>
 </databaseChangeLog>
