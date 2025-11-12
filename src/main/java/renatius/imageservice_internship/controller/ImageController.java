@@ -27,12 +27,12 @@ public class ImageController {
         return ResponseEntity.ok(imageService.uploadSingleImage(imageUploadRequest));
     }
 
-    @PostMapping("/images/{id}")
+    @GetMapping("/images/{id}")
     public ResponseEntity<ImageResponseDto> getImageById(@PathVariable UUID id) {
         return ResponseEntity.ok(imageService.getImageById(id));
     }
 
-    @PostMapping("/user/{id}/images")
+    @GetMapping("/user/{id}/images")
     public ResponseEntity<PagedResponseDto<ImageResponseDto>> getImagesByUser(@PathVariable UUID id,
                                                                               @RequestParam(defaultValue = "0") int page,
                                                                               @RequestParam(defaultValue = "9") int size) {
