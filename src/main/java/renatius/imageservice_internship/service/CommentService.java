@@ -8,6 +8,6 @@ import java.util.UUID;
 public interface CommentService {
     CommentResponseDto addCommentToImage(UUID imageId, CommentImageDto commentImageDto);
     CommentResponseDto updateCommentImage(UUID commentId, CommentImageDto commentImageDto);
-    boolean removeCommentFromImage(UUID commentId);
+    void removeCommentFromImage(UUID commentId);
     List<CommentResponseDto> getCommentsByImage(UUID imageId);
 }

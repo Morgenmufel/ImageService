@@ -17,4 +17,6 @@ public class PagedResponseDto<T> {
     private int currentPage;
     private int totalPages;
     private long totalElements;
+    private boolean first;
+    private boolean last;
 }

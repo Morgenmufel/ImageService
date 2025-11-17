@@ -1,12 +1,10 @@
 package renatius.imageservice_internship.service.impl;
-
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import renatius.imageservice_internship.dto.CommentResponseDto;
 import renatius.imageservice_internship.dto.ImageResponseDto;
@@ -46,8 +44,7 @@ public class ImageServiceImpl implements ImageService {
     private final CommentImageRepository commentImageRepository;
 
     @Override
-    public PagedResponseDto<ImageResponseDto> getAllImagesPaginated(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "uploadedAt"));
+    public PagedResponseDto<ImageResponseDto> getAllImagesPaginated(Pageable pageable) {
         SocialUser currentUser = securityContextHolderUtil.getCurrentUser();
         Page<Image> imagePage = imageRepository.findAll(pageable);
         List<ImageResponseDto> content = setContentToDto(imagePage, currentUser);
@@ -56,12 +53,13 @@ public class ImageServiceImpl implements ImageService {
                 .currentPage(imagePage.getNumber())
                 .totalPages(imagePage.getTotalPages())
                 .totalElements(imagePage.getTotalElements())
+                .first(imagePage.isFirst())
+                .last(imagePage.isLast())
                 .build();
     }
 
     @Override
-    public PagedResponseDto<ImageResponseDto> getImagesByUserPaginated(UUID userId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "uploadedAt"));
+    public PagedResponseDto<ImageResponseDto> getImagesByUserPaginated(UUID userId, Pageable pageable) {
         SocialUser socialUser = socialUserService.getSocialUser(userId);
         SocialUser currentUser = securityContextHolderUtil.getCurrentUser();
         Page<Image> imagePage = imageRepository.findAllByUser(socialUser, pageable);
@@ -71,6 +69,8 @@ public class ImageServiceImpl implements ImageService {
                 .currentPage(imagePage.getNumber())
                 .totalPages(imagePage.getTotalPages())
                 .totalElements(imagePage.getTotalElements())
+                .first(imagePage.isFirst())
+                .last(imagePage.isLast())
                 .build();
     }
 
@@ -105,25 +105,30 @@ public class ImageServiceImpl implements ImageService {
     }
 
     @Override
-    public boolean deleteImageById(UUID id) {
+    public void deleteImageById(UUID id) {
         Image img = imageRepository.findById(id)
                 .orElseThrow(() -> new ImageNotFoundException("Image Not Found"));
+        UUID currentUserId = securityContextHolderUtil.getCurrentUser().getId();
+        if (!img.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You cannot delete someone else's image");
+        }
         try {
             s3Service.deleteFileFromS3(s3Service.extractKeyFromUrl(img.getUrl()));
         } catch (Exception e) {
             LOGGER.error("Failed to delete image from S3: {}", e.getMessage());
         }
         imageRepository.delete(img);
-        return true;
     }
 
     @Override
     public ImageResponseDto uploadSingleImage(ImageUploadRequest request) {
         SocialUser socialUser = securityContextHolderUtil.getCurrentUser();
+        System.out.println("получили юзера");
         Image image = imageMapper.toEntity(request);
         image.setId(UUID.randomUUID());
         image.setUser(socialUser);
         try {
+            System.out.println("загружаем фото");
             image.setUrl(s3Service.uploadFileToS3(image.getId(), request.getFile()));
         } catch (IOException e) {
             LOGGER.error("Failed to upload image to S3", e);

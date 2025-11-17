@@ -35,7 +35,7 @@ public class S3ServiceImpl implements S3Service {
         s3Client.putObject(putObjectRequest,
                 software.amazon.awssdk.core.sync.RequestBody.fromBytes(file.getBytes()));
 
-        return String.format("%s/%s/%s", endPoint, bucketName, fileKey);
+        return String.format("%s/%s/%s", "http://localhost:4566", bucketName, fileKey);
     }
 
 

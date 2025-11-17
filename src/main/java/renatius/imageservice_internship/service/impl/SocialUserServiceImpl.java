@@ -44,11 +44,10 @@ public class SocialUserServiceImpl implements SocialUserService {
     }
 
     @Override
-    public SocialUserResponseDto getUserProfile(UUID userId, int page, int size) {
+    public SocialUserResponseDto getUserProfile(UUID userId, Pageable pageable) {
         SocialUser user = socialUserRepository.findById(userId)
                 .orElseThrow(() -> new SocialUserNotFoundException("User not found"));
         SocialUserResponseDto socialUserResponseDto = socialUserMapper.toDto(user);
-        Pageable pageable = PageRequest.of(page, size, Sort.by("uploadedAt").descending());
         Page<Image> imagePage = imageRepository.findAllByUser(user, pageable);
         List<ImageResponseDto> imageDtos = imagePage.getContent()
                 .stream()
@@ -59,6 +58,8 @@ public class SocialUserServiceImpl implements SocialUserService {
                 .currentPage(imagePage.getNumber())
                 .totalPages(imagePage.getTotalPages())
                 .totalElements(imagePage.getTotalElements())
+                .first(imagePage.isFirst())
+                .last(imagePage.isLast())
                 .build();
         socialUserResponseDto.setImages(pagedImages);
         return socialUserResponseDto;

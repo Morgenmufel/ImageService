@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import renatius.imageservice_internship.entities.SocialUser;
 import renatius.imageservice_internship.repository.SocialUserRepository;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
@@ -22,6 +22,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserHeaderAuthenticationFilter extends OncePerRequestFilter {
 
+    @Value("${INTERNAL_GATEWAY_KEY}")
+    private String internalGatewayKey;
+
     private final SocialUserRepository socialUserRepository;
 
     @Override
@@ -29,17 +32,23 @@ public class UserHeaderAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
+        String internalKey = request.getHeader("X-Internal-Key");
+        if (internalKey == null || !internalGatewayKey.equals(internalKey)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Access denied: invalid internal gateway key\"}");
+            return;
+        }
         String userIdHeader = request.getHeader("X-User-Id");
-        String usernameHeader = request.getHeader("X-User-Username");
+        String usernameHeader = request.getHeader("X-Username");
         if (userIdHeader != null && usernameHeader != null) {
             UUID userId = UUID.fromString(userIdHeader);
             String username = usernameHeader;
-            socialUserRepository.findById(userId).orElseGet(() -> {
-                SocialUser user = new SocialUser();
-                user.setId(userId);
-                user.setUsername(username);
-                return socialUserRepository.save(user);
-            });
+            if(!socialUserRepository.existsById(userId)) {
+                socialUserRepository.save(SocialUser.builder()
+                                .id(userId)
+                                .username(username).build());
+            }
             setCustomUserDetailsToSecurityContextHolder(userId, username, request);
         }
         filterChain.doFilter(request, response);

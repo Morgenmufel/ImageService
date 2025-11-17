@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(SocialUserAlreadyExistsException.class)
     public ResponseEntity<ErrorResponseDto> handleUserAlreadyExists(SocialUserAlreadyExistsException ex) {
-        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(S3IOException.class)

@@ -1,5 +1,4 @@
 package renatius.imageservice_internship.service.impl;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import renatius.imageservice_internship.dto.CommentImageDto;
@@ -58,7 +57,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public boolean removeCommentFromImage(UUID commentId) {
+    public void removeCommentFromImage(UUID commentId) {
         SocialUser user = securityContextHolderUtil.getCurrentUser();
         CommentImage comment = commentImageRepository.findById(commentId)
                 .orElseThrow(() -> new CommentImageNotFoundException("Comment not found"));
@@ -66,7 +65,6 @@ public class CommentServiceImpl implements CommentService {
             throw new SecurityException("You can`t delete alien comment!");
         }
         commentImageRepository.delete(comment);
-        return true;
     }
 
     @Override
