@@ -36,10 +36,10 @@ jobs:
           SONAR_ORGANIZATION: Morgenmufel
         run: |
           mvn sonar:sonar \
-            -Dsonar.projectKey= Morgenmufel_ImageService \
-            -Dsonar.organization= ${{env.SONAR_ORGANIZATION}} \
-            -Dsonar.host.url =  ${{env.SONAR_HOST_URL}}\
-            -Dsonar.login=${{ env.SONAR_TOKEN }}
+            -Dsonar.projectKey=Morgenmufel_ImageService \
+            -Dsonar.organization=${{env.SONAR_ORGANIZATION}} \
+            -Dsonar.host.url=${{env.SONAR_HOST_URL}}\
+            -Dsonar.login=${{env.SONAR_TOKEN }}
 
   docker:
     name: Build and Push Docker Image
