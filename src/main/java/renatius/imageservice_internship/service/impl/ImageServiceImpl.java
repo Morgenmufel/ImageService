@@ -123,12 +123,10 @@ public class ImageServiceImpl implements ImageService {
     @Override
     public ImageResponseDto uploadSingleImage(ImageUploadRequest request) {
         SocialUser socialUser = securityContextHolderUtil.getCurrentUser();
-        System.out.println("получили юзера");
         Image image = imageMapper.toEntity(request);
         image.setId(UUID.randomUUID());
         image.setUser(socialUser);
         try {
-            System.out.println("загружаем фото");
             image.setUrl(s3Service.uploadFileToS3(image.getId(), request.getFile()));
         } catch (IOException e) {
             LOGGER.error("Failed to upload image to S3", e);
