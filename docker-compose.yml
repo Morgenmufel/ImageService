@@ -1,0 +1,40 @@
+version: "3.7"
+
+services:
+  localstack:
+    image: localstack/localstack:4.9.1
+    container_name: localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - LC_LOG=trace
+      - DATA_DIR=/data/localstack
+      - LOCALSTACK_TMP_DIR=/tmp/localstack_tmp
+      - DEFAULT_REGION=${DEFAULT_REGION}
+    volumes:
+      - "localstack_data:/data/localstack"
+    networks:
+      - localnet
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5438:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - "pgdata:/var/lib/postgresql/data"
+    networks:
+      - localnet
+
+networks:
+  localnet:
+    driver: bridge
+
+volumes:
+  localstack_data:
+  pgdata:
