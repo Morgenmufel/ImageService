@@ -29,12 +29,17 @@ jobs:
         run: mvn clean verify
 
       - name: SonarQube Scan
-        uses: sonarsource/sonarcloud-github-action@v2
-        with:
-          projectKey: Morgenmufel_ImageService
-          organization: Morgenmufel
+        if: github.event_name == 'push'
         env:
+          SONAR_HOST_URL: https://sonarcloud.io
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ORGANIZATION: Morgenmufel
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey= Morgenmufel_ImageService \
+            -Dsonar.organization= ${{env.SONAR_ORGANIZATION}} \
+            -Dsonar.host.url =  ${{env.SONAR_HOST_URL}}\
+            -Dsonar.login=${{ env.SONAR_TOKEN }}
 
   docker:
     name: Build and Push Docker Image
