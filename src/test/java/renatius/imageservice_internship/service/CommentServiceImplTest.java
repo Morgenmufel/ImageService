@@ -106,7 +106,7 @@ class CommentServiceImplTest {
                 .description("old")
                 .build();
         when(commentImageRepository.findById(commentId)).thenReturn(Optional.of(comment));
-        when(securityContextHolderUtil.getCurrentUser()).thenReturn(testUser); // different user
+        when(securityContextHolderUtil.getCurrentUser()).thenReturn(testUser);
 
         CommentImageDto dto = new CommentImageDto();
         dto.setDescription("new");
