@@ -120,11 +120,7 @@
             <version>1.5.5.Final</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.sonarsource.scanner.maven</groupId>
-            <artifactId>sonar-maven-plugin</artifactId>
-            <version>3.8.0.2131</version>
-        </dependency>
+
 
         <dependency>
             <groupId>org.liquibase</groupId>
@@ -184,6 +180,12 @@
 
     <build>
         <plugins>
+
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>4.0.0.4121</version>
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
