@@ -2,6 +2,7 @@ package renatius.imageservice_internship.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import renatius.imageservice_internship.dto.ActivityEvent;
 import renatius.imageservice_internship.dto.LikeResponseDto;
 import renatius.imageservice_internship.entities.Image;
 import renatius.imageservice_internship.entities.SocialUser;
@@ -16,6 +17,8 @@ import renatius.imageservice_internship.repository.LikeImageRepository;
 import renatius.imageservice_internship.repository.CommentImageRepository;
 import renatius.imageservice_internship.service.LikeService;
 import renatius.imageservice_internship.util.SecurityContextHolderUtil;
+
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,6 +31,7 @@ public class LikeServiceImpl implements LikeService {
     private final CommentImageRepository commentImageRepository;
     private final ImageRepository imageRepository;
     private final SecurityContextHolderUtil securityContextHolderUtil;
+    private final KafkaProducerService kafkaProducerService;
 
     @Override
     public LikeResponseDto toogleLikeToImage(UUID imageId) {
@@ -39,6 +43,13 @@ public class LikeServiceImpl implements LikeService {
         if (existingLike.isPresent()) {
             likeImageRepository.delete(existingLike.get());
             liked = false;
+            LikeImage likeImage = existingLike.get();
+            ActivityEvent activityEvent = kafkaProducerService.buildEvent(likeImage.getSocialUser().getId().toString(),
+                    likeImage.getImage().getId().toString(),
+                    LocalDateTime.now(),
+                    "NEW",
+                    "DELETED LIKE FROM IMAGE");
+            kafkaProducerService.sendToLikesTopic(activityEvent);
         } else {
             LikeImage newLike = LikeImage.builder()
                     .id(UUID.randomUUID())
@@ -47,6 +58,12 @@ public class LikeServiceImpl implements LikeService {
                     .build();
             likeImageRepository.save(newLike);
             liked = true;
+            ActivityEvent activityEvent = kafkaProducerService.buildEvent(newLike.getSocialUser().getId().toString(),
+                    newLike.getImage().getId().toString(),
+                    LocalDateTime.now(),
+                    "NEW",
+                    "LIKED IMAGE");
+            kafkaProducerService.sendToLikesTopic(activityEvent);
         }
         long likesCount = likeImageRepository.countByImage_Id(imageId);
         return LikeResponseDto.builder()
@@ -66,6 +83,13 @@ public class LikeServiceImpl implements LikeService {
         if (existingLike.isPresent()) {
             likeCommentRepository.delete(existingLike.get());
             liked = false;
+            LikeComment likeComment = existingLike.get();
+            ActivityEvent activityEvent = kafkaProducerService.buildEvent(likeComment.getSocialUser().getId().toString(),
+                    likeComment.getCommentImage().getImage().getId().toString(),
+                    LocalDateTime.now(),
+                    "NEW",
+                    "DELETED LIKE FROM COMMENT");
+            kafkaProducerService.sendToLikesTopic(activityEvent);
         } else {
             LikeComment newLike = LikeComment.builder()
                     .id(UUID.randomUUID())
@@ -74,6 +98,12 @@ public class LikeServiceImpl implements LikeService {
                     .build();
             likeCommentRepository.save(newLike);
             liked = true;
+            ActivityEvent activityEvent = kafkaProducerService.buildEvent(newLike.getSocialUser().getId().toString(),
+                    newLike.getCommentImage().getImage().getId().toString(),
+                    LocalDateTime.now(),
+                    "NEW",
+                    "LIKED COMMENT");
+            kafkaProducerService.sendToLikesTopic(activityEvent);
         }
         long likesCount = likeCommentRepository.countByCommentImage_Id(commentId);
         return LikeResponseDto.builder()

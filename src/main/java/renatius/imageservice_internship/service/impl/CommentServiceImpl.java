@@ -1,6 +1,7 @@
 package renatius.imageservice_internship.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import renatius.imageservice_internship.dto.ActivityEvent;
 import renatius.imageservice_internship.dto.CommentImageDto;
 import renatius.imageservice_internship.dto.CommentResponseDto;
 import renatius.imageservice_internship.entities.CommentImage;
@@ -14,6 +15,8 @@ import renatius.imageservice_internship.repository.ImageRepository;
 import renatius.imageservice_internship.repository.LikeCommentRepository;
 import renatius.imageservice_internship.service.CommentService;
 import renatius.imageservice_internship.util.SecurityContextHolderUtil;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -27,6 +30,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentMapper commentMapper;
     private final ImageRepository imageRepository;
     private final SecurityContextHolderUtil securityContextHolderUtil;
+    private final KafkaProducerService kafkaProducerService;
 
     @Override
     public CommentResponseDto addCommentToImage(UUID imageId, CommentImageDto commentImageDto) {
@@ -40,6 +44,14 @@ public class CommentServiceImpl implements CommentService {
                 .user(user)
                 .build();
         CommentImage saved = commentImageRepository.save(comment);
+        ActivityEvent activityEvent = kafkaProducerService.buildEvent(
+                saved.getUser().getId().toString(),
+                saved.getImage().getId().toString(),
+                LocalDateTime.now(),
+                "NEW",
+                "ADD COMMENT TO IMAGE"
+        );
+        kafkaProducerService.sendToCommentsTopic(activityEvent);
         return mapToResponseDto(saved, user);
     }
 
@@ -53,6 +65,14 @@ public class CommentServiceImpl implements CommentService {
         }
         comment.setDescription(commentImageDto.getDescription());
         commentImageRepository.save(comment);
+        ActivityEvent activityEvent = kafkaProducerService.buildEvent(
+                comment.getUser().getId().toString(),
+                comment.getImage().getId().toString(),
+                LocalDateTime.now(),
+                "NEW",
+                "UPDATED COMMENT"
+        );
+        kafkaProducerService.sendToCommentsTopic(activityEvent);
         return mapToResponseDto(comment, user);
     }
 
@@ -65,6 +85,14 @@ public class CommentServiceImpl implements CommentService {
             throw new SecurityException("You can`t delete alien comment!");
         }
         commentImageRepository.delete(comment);
+        ActivityEvent activityEvent = kafkaProducerService.buildEvent(
+                comment.getUser().getId().toString(),
+                comment.getImage().getId().toString(),
+                LocalDateTime.now(),
+                "NEW",
+                "DELETED COMMENT"
+        );
+        kafkaProducerService.sendToCommentsTopic(activityEvent);
     }
 
     @Override
