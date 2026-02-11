@@ -1,10 +1,9 @@
 package renatius.imageservice_internship.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import renatius.imageservice_internship.configuration.KafkaTemplatesWrapper;
 import renatius.imageservice_internship.dto.ActivityEvent;
 
 import java.time.LocalDateTime;
@@ -13,11 +12,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class KafkaProducerService {
 
-    @Qualifier("likesKafkaTemplate")
-    public final KafkaTemplate<String, ActivityEvent> kafkaLikesTemplate;
-
-    @Qualifier("commentsKafkaTemplate")
-    public final KafkaTemplate<String, ActivityEvent> kafkaCommentsTemplate;
+    private final KafkaTemplatesWrapper kafkaTemplatesWrapper;
 
     @Value("${likes.kafka.topic}")
     private String likesTopic;
@@ -26,11 +21,11 @@ public class KafkaProducerService {
     private String commentsTopic;
 
     public void sendToCommentsTopic(ActivityEvent event){
-        kafkaCommentsTemplate.send(commentsTopic, event.getUserId(), event);
+        kafkaTemplatesWrapper.getCommentsKafkaTemplate().send(commentsTopic, event.getUserId(), event);
     }
 
     public void sendToLikesTopic(ActivityEvent event){
-        kafkaLikesTemplate.send(likesTopic, event.getUserId(), event);
+        kafkaTemplatesWrapper.getLikesKafkaTemplate().send(likesTopic, event.getUserId(), event);
     }
 
     public ActivityEvent buildEvent(String userId,

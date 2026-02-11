@@ -1,4 +1,4 @@
-name: ImageService Backend CI
+name: ImageService CI
 
 on:
   [push]
@@ -56,7 +56,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t hilt0n3/imageservice-backend:latest .
+        run: docker build -t hilt0n3/imageservice-backend:latest
 
       - name: Push Docker image
         run: docker push hilt0n3/imageservice-backend:latest
