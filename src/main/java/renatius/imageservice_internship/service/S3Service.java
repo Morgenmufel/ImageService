@@ -11,5 +11,6 @@ import java.util.UUID;
 public interface S3Service {
      void deleteFileFromS3(String key);
      String uploadFileToS3(UUID imageId,MultipartFile file) throws IOException;
-     String extractKeyFromUrl(String urlOrKey);
+     byte[] getObjectBytes(String key);
+
 }

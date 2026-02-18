@@ -80,6 +80,7 @@ public class ImageServiceImpl implements ImageService {
         Image image = imageRepository.findById(id)
                 .orElseThrow(() -> new ImageNotFoundException("Image not found"));
         ImageResponseDto dto = imageMapper.toDto(image);
+        dto.setUrl("/api/images/" + image.getId() + "/content");
         dto.setLikesCount(likeImageRepository.countByImage_Id(id));
         dto.setCommentsCount(commentImageRepository.countByImage_Id(id));
         dto.setLikedByCurrentUser(
@@ -113,7 +114,7 @@ public class ImageServiceImpl implements ImageService {
             throw new AccessDeniedException("You cannot delete someone else's image");
         }
         try {
-            s3Service.deleteFileFromS3(s3Service.extractKeyFromUrl(img.getUrl()));
+            s3Service.deleteFileFromS3(img.getUrl());
         } catch (Exception e) {
             LOGGER.error("Failed to delete image from S3: {}", e.getMessage());
         }
@@ -140,6 +141,7 @@ public class ImageServiceImpl implements ImageService {
         List<ImageResponseDto> content = imagePage.getContent().stream()
                 .map(image -> {
                     ImageResponseDto dto = imageMapper.toDto(image);
+                    dto.setUrl("/api/images/" + image.getId() + "/content");
                     dto.setLikedByCurrentUser(
                             likeImageRepository.existsByImage_IdAndSocialUser_Id(image.getId(), currentUser.getId())
                     );
@@ -149,5 +151,13 @@ public class ImageServiceImpl implements ImageService {
                 })
                 .toList();
         return content;
+    }
+
+    @Override
+    public byte[] getImageContent(UUID id) {
+        Image image = imageRepository.findById(id)
+                .orElseThrow(() -> new ImageNotFoundException("Image not found"));
+        String key = image.getUrl();
+        return s3Service.getObjectBytes(key);
     }
 }

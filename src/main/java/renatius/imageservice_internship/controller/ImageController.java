@@ -36,7 +36,6 @@ public class ImageController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImageResponseDto> uploadImage(
             @ModelAttribute ImageUploadRequest imageUploadRequest) {
-        System.out.println("in Controller");
         return ResponseEntity.ok(imageService.uploadSingleImage(imageUploadRequest));
     }
 
@@ -96,4 +95,12 @@ public class ImageController {
         imageService.deleteImageById(imageId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
+    @GetMapping("/images/{id}/content")
+    public ResponseEntity<byte[]> getImageContent(@PathVariable UUID id) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(imageService.getImageContent(id));
+    }
+
 }

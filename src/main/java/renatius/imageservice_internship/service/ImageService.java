@@ -13,4 +13,6 @@ public interface ImageService {
     ImageResponseDto getImageById(UUID id);
     void deleteImageById(UUID id);
     ImageResponseDto uploadSingleImage(ImageUploadRequest request);
+    byte[] getImageContent(UUID id);
+
 }

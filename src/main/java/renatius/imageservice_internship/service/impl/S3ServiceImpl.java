@@ -1,12 +1,15 @@
 package renatius.imageservice_internship.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import renatius.imageservice_internship.service.S3Service;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import java.io.IOException;
 import java.util.UUID;
@@ -15,6 +18,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class S3ServiceImpl implements S3Service {
     private final S3Client s3Client;
+    private static final Logger LOGGER = LogManager.getLogger(S3ServiceImpl.class);
 
     @Value("${AWS_S3_BUCKET_NAME}")
     private String bucketName;
@@ -25,7 +29,7 @@ public class S3ServiceImpl implements S3Service {
     @Override
     public String uploadFileToS3(UUID id,MultipartFile file) throws IOException {
         String fileKey = id + "_" + file.getOriginalFilename();
-
+        LOGGER.error("AAAAAAAAAAAAAAAAAAAA {}", fileKey );
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(fileKey)
@@ -35,7 +39,7 @@ public class S3ServiceImpl implements S3Service {
         s3Client.putObject(putObjectRequest,
                 software.amazon.awssdk.core.sync.RequestBody.fromBytes(file.getBytes()));
 
-        return String.format("%s/%s/%s", "http://localhost:4566", bucketName, fileKey);
+        return fileKey;
     }
 
 
@@ -50,14 +54,12 @@ public class S3ServiceImpl implements S3Service {
         }
     }
 
-    @Override
-    public String extractKeyFromUrl(String urlOrKey) {
-        if (urlOrKey == null) return null;
-        int lastSlash = urlOrKey.lastIndexOf('/');
-        if (lastSlash >= 0 && lastSlash < urlOrKey.length() - 1) {
-            return urlOrKey.substring(lastSlash + 1);
-        }
-        return urlOrKey;
+    public byte[] getObjectBytes(String key) {
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+        return s3Client.getObjectAsBytes(request).asByteArray();
     }
 
 

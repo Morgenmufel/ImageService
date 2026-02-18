@@ -32,6 +32,8 @@ public class UserHeaderAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+        if (path.matches("^/api/images/[^/]+/content$")) {filterChain.doFilter(request, response); return;}
         String internalKey = request.getHeader("X-Internal-Key");
         if (internalKey == null || !internalGatewayKey.equals(internalKey)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
