@@ -20,13 +20,17 @@ import renatius.imageservice_internship.repository.CommentImageRepository;
 import renatius.imageservice_internship.repository.ImageRepository;
 import renatius.imageservice_internship.repository.LikeCommentRepository;
 import renatius.imageservice_internship.repository.LikeImageRepository;
+import renatius.imageservice_internship.service.ImageCountView;
 import renatius.imageservice_internship.service.ImageService;
 import renatius.imageservice_internship.service.S3Service;
 import renatius.imageservice_internship.service.SocialUserService;
 import renatius.imageservice_internship.util.SecurityContextHolderUtil;
+
+import java.util.HashSet;
 import java.util.List;
 import java.io.IOException;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -138,19 +142,21 @@ public class ImageServiceImpl implements ImageService {
     }
 
     private List<ImageResponseDto> setContentToDto(Page<Image> imagePage, SocialUser currentUser){
-        List<ImageResponseDto> content = imagePage.getContent().stream()
-                .map(image -> {
-                    ImageResponseDto dto = imageMapper.toDto(image);
-                    dto.setUrl("/api/images/" + image.getId() + "/content");
-                    dto.setLikedByCurrentUser(
-                            likeImageRepository.existsByImage_IdAndSocialUser_Id(image.getId(), currentUser.getId())
-                    );
-                    dto.setLikesCount(likeImageRepository.countByImage_Id(image.getId()));
-                    dto.setCommentsCount(commentImageRepository.countByImage_Id(image.getId()));
-                    return dto;
-                })
-                .toList();
-        return content;
+        List<Image> images = imagePage.getContent();
+        List<UUID> imageIds = images.stream().map(Image::getId).toList();
+        var likesMap = likeImageRepository.countByImageIds(imageIds).stream()
+                .collect(Collectors.toMap(ImageCountView::getImageId, ImageCountView::getCnt));
+        var commentsMap = commentImageRepository.countByImageIds(imageIds).stream()
+                .collect(Collectors.toMap(ImageCountView::getImageId, ImageCountView::getCnt));
+        var likedIds = new HashSet<>(likeImageRepository.findLikedImageIdsByUser(imageIds, currentUser.getId()));
+        return images.stream().map(image -> {
+            ImageResponseDto dto = imageMapper.toDto(image);
+            dto.setUrl("/api/images/" + image.getId() + "/content");
+            dto.setLikesCount(likesMap.getOrDefault(image.getId(), 0L));
+            dto.setCommentsCount(commentsMap.getOrDefault(image.getId(), 0L));
+            dto.setLikedByCurrentUser(likedIds.contains(image.getId()));
+            return dto;
+        }).toList();
     }
 
     @Override

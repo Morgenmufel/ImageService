@@ -13,10 +13,12 @@ import renatius.imageservice_internship.mapper.CommentMapper;
 import renatius.imageservice_internship.repository.CommentImageRepository;
 import renatius.imageservice_internship.repository.ImageRepository;
 import renatius.imageservice_internship.repository.LikeCommentRepository;
+import renatius.imageservice_internship.service.CommentCountView;
 import renatius.imageservice_internship.service.CommentService;
 import renatius.imageservice_internship.util.SecurityContextHolderUtil;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -98,10 +100,19 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public List<CommentResponseDto> getCommentsByImage(UUID imageId) {
         SocialUser currentUser = securityContextHolderUtil.getCurrentUser();
-        List<CommentImage> comments = commentImageRepository.findAllByImage_IdOrderByCreatedAtDesc(imageId);
-        return comments.stream()
-                .map(comment -> mapToResponseDto(comment, currentUser))
-                .collect(Collectors.toList());
+        List<CommentImage> comments = commentImageRepository
+                .findAllByImage_IdOrderByCreatedAtDesc(imageId);
+        List<UUID> commentIds = comments.stream().map(CommentImage::getId).toList();
+        var likesMap = likeCommentRepository.countByCommentIds(commentIds).stream()
+                .collect(Collectors.toMap(CommentCountView::getCommentId, CommentCountView::getCnt));
+        var likedIds = new HashSet<>(likeCommentRepository
+                .findLikedCommentIdsByUser(commentIds, currentUser.getId()));
+        return comments.stream().map(c -> {
+            CommentResponseDto dto = commentMapper.toDto(c);
+            dto.setLikesCount(likesMap.getOrDefault(c.getId(), 0L));
+            dto.setLikedByCurrentUser(likedIds.contains(c.getId()));
+            return dto;
+        }).toList();
     }
 
     private CommentResponseDto mapToResponseDto(CommentImage comment, SocialUser currentUser) {
